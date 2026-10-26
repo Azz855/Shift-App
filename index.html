@@ -144,7 +144,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--text-primary);
       cursor: pointer;
     }
     .badge-btn {
@@ -196,6 +195,7 @@
       padding: 14px;
       border: 1px solid var(--border);
       box-shadow: var(--shadow-card);
+      touch-action: none; /* Mencegah layar bergulir saat jari sedang mewarnai tanggal */
     }
     .weekdays-grid {
       display: grid;
@@ -438,7 +438,7 @@
           Okt '26
         </button>
 
-        <!-- Tombol Setting yang sudah diperbaiki warnanya agar kontras di Dark Mode -->
+        <!-- Tombol Setting -->
         <button id="openConfigBtn" class="btn-circle-sm active-scale" title="Settings" style="color:var(--text-primary);">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" y1="21" x2="4" y2="14"></line>
@@ -504,12 +504,12 @@
         <span id="txtTouchMode">Mode sentuh:</span> <strong id="activeModeLabel" style="color:var(--text-primary); font-weight:600;">Khusus (3 jam)</strong>
       </div>
       <div style="color:var(--text-muted); font-size:10px;" id="txtTapHint">
-        Ketuk tanggal untuk ubah
+        Ketuk atau seret tanggal untuk ubah
       </div>
     </div>
 
     <!-- Calendar Card Container -->
-    <div class="calendar-card">
+    <div class="calendar-card" id="calendarCardArea">
       <div class="weekdays-grid" id="weekdaysGrid">
         <div>SEN</div><div>SEL</div><div>RAB</div><div>KAM</div><div>JUM</div><div>SAB</div><div style="color:#ef4444;">MIN</div>
       </div>
@@ -543,7 +543,7 @@
       </div>
     </div>
 
-    <!-- TOMBOL SIMPAN KE PDF (DI DAERAH KOTAK MERAH DENGAN TEKS RINGKAS) -->
+    <!-- TOMBOL SIMPAN KE PDF -->
     <button class="pdf-action-card active-scale" onclick="exportToPDF()" id="btnSaveToPdf">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M6 9V2h12v7"></path>
@@ -759,7 +759,6 @@
   </div>
 
   <script>
-    // DICTIONARY 3 BAHASA DENGAN TEKS PRINT SINGKAT
     const i18n = {
       id: {
         months: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'],
@@ -769,7 +768,7 @@
         red: 'Libur',
         custom: 'Khusus',
         touchMode: 'Mode sentuh:',
-        tapHint: 'Ketuk tanggal untuk ubah',
+        tapHint: 'Ketuk atau seret tanggal untuk ubah',
         hoursSuffix: 'j',
         hoursWord: 'jam',
         daysWord: 'hr',
@@ -806,7 +805,7 @@
         red: 'İzin',
         custom: 'Özel',
         touchMode: 'Dokunma Modu:',
-        tapHint: 'Değiştirmek için güne dokunun',
+        tapHint: 'Değiştirmek için dokunun veya kaydırın',
         hoursSuffix: 's',
         hoursWord: 'saat',
         daysWord: 'gün',
@@ -843,7 +842,7 @@
         red: 'Off',
         custom: 'Custom',
         touchMode: 'Touch Mode:',
-        tapHint: 'Tap date to change',
+        tapHint: 'Tap or drag across dates to change',
         hoursSuffix: 'h',
         hoursWord: 'hours',
         daysWord: 'days',
@@ -879,7 +878,7 @@
     let activeBrush = 'custom';
 
     let presetConfigs = {
-      lang: 'tr', // Default ke Türkçe
+      lang: 'tr',
       white: 9,
       yellow: 7,
       red: 0,
@@ -889,6 +888,10 @@
 
     let selectedDateForSheet = null;
     let calendarStore = {};
+
+    // Variabel Flag Drag Touch / Mouse
+    let isDragging = false;
+    let dragHasChanged = false;
 
     const initialOctober2026 = {
       1: { type: 'white' }, 2: { type: 'yellow' }, 3: { type: 'yellow' }, 4: { type: 'yellow' },
@@ -1010,7 +1013,6 @@
       document.getElementById('statTitleRed').textContent = t.red;
       document.getElementById('statTitleCustom').textContent = t.custom;
 
-      // Tombol PDF yang kini ringkas
       document.getElementById('txtSavePdfBtn').textContent = t.savePdfBtn;
 
       document.getElementById('lblTotalHours').textContent = t.totalHoursLabel;
@@ -1144,13 +1146,28 @@
         }
 
         cell.className = 'day-cell squircle active-scale';
+        cell.dataset.day = day;
         cell.style.cssText = cellStyle;
         cell.innerHTML = `
-          <span style="font-size:12px; font-weight:600; line-height:1;">${day}</span>
-          ${subTextHTML ? `<span style="line-height:1; margin-top:3px;">${subTextHTML}</span>` : ''}
+          <span style="font-size:12px; font-weight:600; line-height:1; pointer-events:none;">${day}</span>
+          ${subTextHTML ? `<span style="line-height:1; margin-top:3px; pointer-events:none;">${subTextHTML}</span>` : ''}
         `;
 
-        cell.addEventListener('click', () => applyBrushToDay(day));
+        // Klik Mouse Biasa
+        cell.addEventListener('mousedown', (e) => {
+          if (e.button === 0) {
+            isDragging = true;
+            dragHasChanged = false;
+            paintDayWithoutRender(day);
+          }
+        });
+
+        cell.addEventListener('mouseenter', () => {
+          if (isDragging) {
+            paintDayWithoutRender(day);
+          }
+        });
+
         cell.addEventListener('contextmenu', (e) => {
           e.preventDefault();
           openDaySheet(day);
@@ -1171,26 +1188,82 @@
       recalculateTotals();
     }
 
-    function applyBrushToDay(day) {
+    // Fungsi Mewarnai Tanggal yang Efisien Saat Diseret
+    function paintDayWithoutRender(day) {
       const monthKey = getMonthKey(currentYear, currentMonth);
       if (!calendarStore[monthKey]) calendarStore[monthKey] = {};
 
+      const current = calendarStore[monthKey][day];
+      let isDifferent = false;
+
       if (activeBrush === 'clear') {
-        delete calendarStore[monthKey][day];
+        if (current) {
+          delete calendarStore[monthKey][day];
+          isDifferent = true;
+        }
       } else if (activeBrush === 'custom') {
-        calendarStore[monthKey][day] = {
-          type: 'custom',
-          customHours: presetConfigs.custom
-        };
+        if (!current || current.type !== 'custom' || current.customHours !== presetConfigs.custom) {
+          calendarStore[monthKey][day] = { type: 'custom', customHours: presetConfigs.custom };
+          isDifferent = true;
+        }
       } else {
-        calendarStore[monthKey][day] = {
-          type: activeBrush
-        };
+        if (!current || current.type !== activeBrush) {
+          calendarStore[monthKey][day] = { type: activeBrush };
+          isDifferent = true;
+        }
       }
 
-      saveData();
-      renderCalendar();
+      if (isDifferent) {
+        dragHasChanged = true;
+        renderCalendar(); // Perbarui tampilan kotak langsung saat jari melewatinya
+      }
     }
+
+    // ==========================================
+    // SISTEM SENTUH GESER (TOUCH DRAG & SWIPE) HP
+    // ==========================================
+    const cardArea = document.getElementById('calendarCardArea');
+
+    cardArea.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      const cell = target ? target.closest('.day-cell[data-day]') : null;
+
+      if (cell) {
+        isDragging = true;
+        dragHasChanged = false;
+        const day = parseInt(cell.dataset.day, 10);
+        paintDayWithoutRender(day);
+      }
+    }, { passive: false });
+
+    cardArea.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      e.preventDefault(); // Menghentikan layar dari bergulir saat jari sedang mewarnai
+
+      const touch = e.touches[0];
+      const target = document.elementFromPoint(touch.clientX, touch.clientY);
+      const cell = target ? target.closest('.day-cell[data-day]') : null;
+
+      if (cell) {
+        const day = parseInt(cell.dataset.day, 10);
+        paintDayWithoutRender(day);
+      }
+    }, { passive: false });
+
+    function finishDragging() {
+      if (isDragging) {
+        isDragging = false;
+        if (dragHasChanged) {
+          saveData();
+          recalculateTotals();
+        }
+      }
+    }
+
+    window.addEventListener('touchend', finishDragging);
+    window.addEventListener('touchcancel', finishDragging);
+    window.addEventListener('mouseup', finishDragging);
 
     function recalculateTotals() {
       const t = getT();
@@ -1239,7 +1312,7 @@
       document.getElementById('grandTotalWage').textContent = totalWage.toLocaleString('id-ID');
       document.getElementById('rateSummaryNote').textContent = `@ ${presetConfigs.hourlyRate} TL/${t.hoursSuffix.toUpperCase()}`;
 
-      // Print elements
+      // Elemen PDF
       document.getElementById('printTotalHours').textContent = `${totalHours} ${t.totalHoursUnit}`;
       document.getElementById('printTotalWage').textContent = `${totalWage.toLocaleString('id-ID')} TL`;
       document.getElementById('printRateNote').textContent = `Tarif: ${presetConfigs.hourlyRate} TL / ${t.totalHoursUnit}`;
@@ -1421,7 +1494,7 @@
       if (e.target.id === 'configSheetOverlay') hideSheet('configSheetOverlay');
     });
 
-    // Cetak Dokumen PDF Rapi (Otomatis Normalisasi Light Mode Saat Print)
+    // Cetak Dokumen PDF Rapi
     function exportToPDF() {
       const now = new Date();
       document.getElementById('printDocSub').textContent = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
@@ -1449,7 +1522,7 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         const swScript = `
-          const CACHE_NAME = 'shift-app-offline-v6';
+          const CACHE_NAME = 'shift-app-offline-v7';
           self.addEventListener('install', e => self.skipWaiting());
           self.addEventListener('activate', e => e.waitUntil(clients.claim()));
           self.addEventListener('fetch', e => {
