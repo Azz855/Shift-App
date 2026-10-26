@@ -9,20 +9,20 @@
   <title>Shift & Wage Calendar</title>
 
   <style>
-    /* RESET & DASAR APPLE NATIVE (100% OFFLINE) */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
+      -webkit-user-select: none;
     }
     input, button, select {
       user-select: auto;
+      -webkit-user-select: auto;
       font-family: inherit;
     }
     :root {
-      /* Light Mode Palette */
       --bg: #f3f4f6;
       --card: #ffffff;
       --card-subtle: #f9fafb;
@@ -42,7 +42,6 @@
       --pdf-btn-text: #1f2937;
     }
     html.dark {
-      /* OLED Dark Mode Palette */
       --bg: #000000;
       --card: #161618;
       --card-subtle: #1f1f23;
@@ -92,7 +91,6 @@
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
 
-    /* HEADER & WRAPPER */
     .top-header {
       position: sticky;
       top: 0;
@@ -122,7 +120,6 @@
       gap: 14px;
     }
 
-    /* BUTTONS */
     .btn-circle {
       width: 36px;
       height: 36px;
@@ -157,7 +154,6 @@
       cursor: pointer;
     }
 
-    /* BRUSH SELECTOR */
     .selector-box {
       background: var(--card);
       padding: 4px;
@@ -188,14 +184,15 @@
       color: var(--text-primary);
     }
 
-    /* CALENDAR */
+    /* KUNCI AREA TOUCH PADA KALENDER */
     .calendar-card {
       background: var(--card);
       border-radius: 1.5rem;
       padding: 14px;
       border: 1px solid var(--border);
       box-shadow: var(--shadow-card);
-      touch-action: none; /* Mencegah layar bergulir saat jari sedang mewarnai tanggal */
+      touch-action: none !important;
+      -webkit-touch-callout: none;
     }
     .weekdays-grid {
       display: grid;
@@ -211,6 +208,7 @@
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 8px;
+      touch-action: none !important;
     }
     .day-cell {
       aspect-ratio: 1;
@@ -219,10 +217,11 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: transform 0.1s ease, border-color 0.15s ease;
+      pointer-events: auto;
+      touch-action: none !important;
+      transition: transform 0.08s ease, border-color 0.12s ease;
     }
 
-    /* STATS GRID */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -240,7 +239,6 @@
       justify-content: center;
     }
 
-    /* PDF ACTION BUTTON */
     .pdf-action-card {
       width: 100%;
       background: var(--pdf-btn-bg);
@@ -264,7 +262,6 @@
       color: #3b82f6;
     }
 
-    /* FOOTER BAR */
     .bottom-bar {
       position: fixed;
       bottom: 0;
@@ -286,7 +283,6 @@
       justify-content: space-between;
     }
 
-    /* MODAL SHEETS */
     .sheet-overlay {
       position: fixed;
       inset: 0;
@@ -341,7 +337,6 @@
       background: #3f3f46;
     }
 
-    /* PRINT STYLES */
     .print-report-header {
       display: none;
     }
@@ -395,7 +390,6 @@
 </head>
 <body class="antialiased">
 
-  <!-- Printable Header -->
   <div class="print-report-header">
     <div style="display:flex; justify-content:space-between; align-items:flex-end;">
       <div>
@@ -408,10 +402,8 @@
     </div>
   </div>
 
-  <!-- Top Sticky Header Bar -->
   <header class="top-header ios-blur">
     <div class="header-inner">
-      <!-- Left: Navigation & Title -->
       <div style="display:flex; align-items:center; gap:8px;">
         <button id="prevMonthBtn" class="btn-circle active-scale" title="Previous Month">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -428,7 +420,6 @@
         </button>
       </div>
 
-      <!-- Right: Month Badge, Theme Toggle & Settings Icon -->
       <div style="display:flex; align-items:center; gap:8px;">
         <button id="themeToggleBtn" class="btn-circle-sm active-scale" title="Ganti Tema">
           <svg id="themeIcon" width="13" height="13" viewBox="0 0 24 24" fill="currentColor"></svg>
@@ -438,7 +429,6 @@
           Okt '26
         </button>
 
-        <!-- Tombol Setting -->
         <button id="openConfigBtn" class="btn-circle-sm active-scale" title="Settings" style="color:var(--text-primary);">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="4" y1="21" x2="4" y2="14"></line>
@@ -456,39 +446,31 @@
     </div>
   </header>
 
-  <!-- Main Content Container -->
   <main class="main-wrap">
-    
-    <!-- Top Brush Selector (Segmented Pill Bar) -->
     <section class="selector-box">
-      <!-- Preset Putih -->
       <button data-brush="white" class="brush-pill active-scale">
         <span style="width:10px; height:10px; border-radius:50%; background:#94a3b8; border:1px solid rgba(0,0,0,0.2);"></span>
         <span style="font-weight:600;" id="pillWhiteName">Putih</span>
         <span class="font-mono" style="font-size:11px; opacity:0.8;" id="pillWhiteHours">9j</span>
       </button>
 
-      <!-- Preset Kuning -->
       <button data-brush="yellow" class="brush-pill active-scale">
         <span style="width:10px; height:10px; border-radius:50%; background:#facc15;"></span>
         <span style="font-weight:600;" id="pillYellowName">Kuning</span>
         <span class="font-mono" style="font-size:11px; opacity:0.8;" id="pillYellowHours">7j</span>
       </button>
 
-      <!-- Preset Merah / Libur -->
       <button data-brush="red" class="brush-pill active-scale">
         <span style="width:10px; height:10px; border-radius:50%; background:#ef4444;"></span>
         <span style="font-weight:600;" id="pillRedName">Libur</span>
       </button>
 
-      <!-- Preset Khusus (Default Aktif) -->
       <button data-brush="custom" class="brush-pill active-scale">
         <span style="width:10px; height:10px; border-radius:50%; background:#ffffff;"></span>
         <span style="font-weight:600;" id="pillCustomName">Khusus</span>
         <span class="font-mono" style="font-size:11px; opacity:0.9;" id="pillCustomHours">3j</span>
       </button>
 
-      <!-- Hapus Shift -->
       <button data-brush="clear" class="brush-pill active-scale" style="flex:0 0 32px; padding:6px 0;" title="Hapus Shift">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
@@ -498,7 +480,6 @@
       </button>
     </section>
 
-    <!-- Sub-bar Helper Text -->
     <div id="brushStatusRow" style="display:flex; align-items:center; justify-content:space-between; padding:0 4px; font-size:11px;">
       <div style="color:var(--text-secondary);">
         <span id="txtTouchMode">Mode sentuh:</span> <strong id="activeModeLabel" style="color:var(--text-primary); font-weight:600;">Khusus (3 jam)</strong>
@@ -508,7 +489,7 @@
       </div>
     </div>
 
-    <!-- Calendar Card Container -->
+    <!-- Area Kalender -->
     <div class="calendar-card" id="calendarCardArea">
       <div class="weekdays-grid" id="weekdaysGrid">
         <div>SEN</div><div>SEL</div><div>RAB</div><div>KAM</div><div>JUM</div><div>SAB</div><div style="color:#ef4444;">MIN</div>
@@ -516,7 +497,6 @@
       <div id="calendarGrid" class="calendar-grid"></div>
     </div>
 
-    <!-- 4-Column Stat Summary Cards -->
     <div class="stats-grid">
       <div class="stat-card">
         <span style="font-size:11px; font-weight:500; color:var(--text-secondary);" id="statTitleWhite">Putih</span>
@@ -543,7 +523,6 @@
       </div>
     </div>
 
-    <!-- TOMBOL SIMPAN KE PDF -->
     <button class="pdf-action-card active-scale" onclick="exportToPDF()" id="btnSaveToPdf">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M6 9V2h12v7"></path>
@@ -553,7 +532,6 @@
       <span id="txtSavePdfBtn">Yazdır / PDF</span>
     </button>
 
-    <!-- Ringkasan Gaji Khusus Hasil Cetak PDF -->
     <div class="print-summary-box" style="display:none;">
       <div>
         <div style="font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase;" id="printTotalLabel">Total Akumulasi Jam</div>
@@ -564,10 +542,8 @@
         <div style="font-size:24px; font-weight:800; color:#b45309;" id="printTotalWage">27.820 TL</div>
       </div>
     </div>
-
   </main>
 
-  <!-- Sticky Bottom Calculation Bar -->
   <footer class="bottom-bar ios-blur">
     <div class="bottom-inner">
       <div>
@@ -594,7 +570,7 @@
     </div>
   </footer>
 
-  <!-- iOS Sheet: Edit Tanggal Khusus -->
+  <!-- Modal Edit Tanggal -->
   <div id="daySheetOverlay" class="sheet-overlay">
     <div id="daySheetContent" class="sheet-container sheet-transition">
       <div class="sheet-drag"></div>
@@ -657,7 +633,7 @@
     </div>
   </div>
 
-  <!-- iOS Sheet: Pengaturan Durasi Default, Upah & Bahasa -->
+  <!-- Modal Pengaturan -->
   <div id="configSheetOverlay" class="sheet-overlay">
     <div id="configSheetContent" class="sheet-container sheet-transition">
       <div class="sheet-drag"></div>
@@ -676,7 +652,6 @@
       </div>
 
       <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
-        <!-- PILIHAN BAHASA -->
         <div style="display:flex; align-items:center; justify-content:space-between; background:var(--card-subtle); padding:10px 12px; border-radius:1rem; border:1px solid var(--border);">
           <span style="font-size:12px; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
@@ -693,7 +668,6 @@
           </select>
         </div>
 
-        <!-- Upah Per Jam -->
         <div style="display:flex; align-items:center; justify-content:space-between; background:var(--card-subtle); padding:10px 12px; border-radius:1rem; border:1px solid var(--border);">
           <span style="font-size:12px; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2">
@@ -710,7 +684,6 @@
           </div>
         </div>
 
-        <!-- Jam Preset Putih -->
         <div style="display:flex; align-items:center; justify-content:space-between; background:var(--card-subtle); padding:10px 12px; border-radius:1rem; border:1px solid var(--border);">
           <span style="font-size:12px; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
             <span style="width:12px; height:12px; border-radius:50%; border:1px solid #94a3b8;"></span> 
@@ -722,7 +695,6 @@
           </div>
         </div>
 
-        <!-- Jam Preset Kuning -->
         <div style="display:flex; align-items:center; justify-content:space-between; background:var(--card-subtle); padding:10px 12px; border-radius:1rem; border:1px solid var(--border);">
           <span style="font-size:12px; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
             <span style="width:12px; height:12px; border-radius:50%; background:#facc15;"></span> 
@@ -734,7 +706,6 @@
           </div>
         </div>
 
-        <!-- Jam Preset Khusus -->
         <div style="display:flex; align-items:center; justify-content:space-between; background:var(--card-subtle); padding:10px 12px; border-radius:1rem; border:1px solid var(--border);">
           <span style="font-size:12px; font-weight:600; color:var(--text-primary); display:flex; align-items:center; gap:8px;">
             <span style="width:12px; height:12px; border-radius:50%; background:#3b82f6;"></span> 
@@ -874,7 +845,7 @@
     };
 
     let currentYear = 2026;
-    let currentMonth = 9; // 9 = Oktober
+    let currentMonth = 9;
     let activeBrush = 'custom';
 
     let presetConfigs = {
@@ -889,9 +860,9 @@
     let selectedDateForSheet = null;
     let calendarStore = {};
 
-    // Variabel Flag Drag Touch / Mouse
     let isDragging = false;
     let dragHasChanged = false;
+    let lastPaintedDay = null;
 
     const initialOctober2026 = {
       1: { type: 'white' }, 2: { type: 'yellow' }, 3: { type: 'yellow' }, 4: { type: 'yellow' },
@@ -1071,6 +1042,42 @@
       document.getElementById('activeModeLabel').textContent = labelMap[activeBrush];
     }
 
+    // Fungsi update style satu cell secara instan tanpa re-render DOM total
+    function updateCellVisual(cell, day) {
+      const t = getT();
+      const monthKey = getMonthKey(currentYear, currentMonth);
+      const entry = calendarStore[monthKey]?.[day];
+      const isDark = document.documentElement.classList.contains('dark');
+
+      let cellStyle = '';
+      let subTextHTML = '';
+
+      if (entry) {
+        const hrs = getHoursForEntry(entry);
+        if (entry.type === 'white') {
+          cellStyle = isDark ? 'border:1.5px solid #a1a1aa; background:rgba(24,24,27,0.6); color:#ffffff;' : 'border:1.5px solid #cbd5e1; background:#ffffff; color:#1e293b; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
+          subTextHTML = `<span class="font-mono" style="font-size:10px; color:${isDark ? '#a1a1aa' : '#94a3b8'}; pointer-events:none;">${hrs}${t.hoursSuffix}</span>`;
+        } else if (entry.type === 'yellow') {
+          cellStyle = isDark ? 'border:1.5px solid rgba(234,179,8,0.8); background:rgba(113,63,18,0.2); color:#fde047;' : 'border:1.5px solid #fde047; background:#fefce8; color:#78350f; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
+          subTextHTML = `<span class="font-mono" style="font-size:10px; color:${isDark ? 'rgba(250,204,21,0.9)' : '#d97706'}; pointer-events:none;">${hrs}${t.hoursSuffix}</span>`;
+        } else if (entry.type === 'red') {
+          cellStyle = isDark ? 'border:1.5px solid rgba(239,68,68,0.8); background:rgba(127,29,29,0.25); color:#f87171;' : 'border:1.5px solid #fca5a5; background:#fef2f2; color:#b91c1c; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
+          subTextHTML = '';
+        } else if (entry.type === 'custom') {
+          cellStyle = isDark ? 'border:1.5px solid #3b82f6; background:rgba(30,58,138,0.3); color:#60a5fa;' : 'border:1.5px solid #60a5fa; background:#eff6ff; color:#1d4ed8; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
+          subTextHTML = `<span class="font-mono" style="font-size:10px; color:${isDark ? '#60a5fa' : '#2563eb'}; pointer-events:none;">${hrs}${t.hoursSuffix}</span>`;
+        }
+      } else {
+        cellStyle = isDark ? 'border:1px solid var(--border); background:rgba(31,31,35,0.4); color:#d4d4d8;' : 'border:1px solid var(--border); background:var(--card-subtle); color:#475569;';
+      }
+
+      cell.style.cssText = cellStyle;
+      cell.innerHTML = `
+        <span style="font-size:12px; font-weight:600; line-height:1; pointer-events:none;">${day}</span>
+        ${subTextHTML ? `<span style="line-height:1; margin-top:3px; pointer-events:none;">${subTextHTML}</span>` : ''}
+      `;
+    }
+
     function renderCalendar() {
       const t = getT();
       const grid = document.getElementById('calendarGrid');
@@ -1079,15 +1086,10 @@
       document.getElementById('monthYearDisplay').textContent = `${t.months[currentMonth]} ${currentYear}`;
       document.getElementById('todayBadgeBtn').textContent = `${t.months[currentMonth].slice(0,3)} '${String(currentYear).slice(-2)}`;
 
-      const monthKey = getMonthKey(currentYear, currentMonth);
-      const monthData = calendarStore[monthKey] || {};
-
       const firstDay = new Date(currentYear, currentMonth, 1).getDay();
       const startCol = (firstDay + 6) % 7;
       const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
       const prevMonthDays = new Date(currentYear, currentMonth, 0).getDate();
-
-      const isDark = document.documentElement.classList.contains('dark');
 
       for (let i = startCol - 1; i >= 0; i--) {
         const cell = document.createElement('div');
@@ -1097,74 +1099,22 @@
       }
 
       for (let day = 1; day <= totalDays; day++) {
-        const entry = monthData[day];
         const cell = document.createElement('div');
-
-        let cellStyle = '';
-        let subTextHTML = '';
-
-        if (entry) {
-          const hrs = getHoursForEntry(entry);
-
-          if (entry.type === 'white') {
-            if (isDark) {
-              cellStyle = 'border:1.5px solid #a1a1aa; background:rgba(24,24,27,0.6); color:#ffffff;';
-              subTextHTML = `<span class="font-mono" style="font-size:10px; color:#a1a1aa;">${hrs}${t.hoursSuffix}</span>`;
-            } else {
-              cellStyle = 'border:1.5px solid #cbd5e1; background:#ffffff; color:#1e293b; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
-              subTextHTML = `<span class="font-mono" style="font-size:10px; color:#94a3b8;">${hrs}${t.hoursSuffix}</span>`;
-            }
-          } else if (entry.type === 'yellow') {
-            if (isDark) {
-              cellStyle = 'border:1.5px solid rgba(234,179,8,0.8); background:rgba(113,63,18,0.2); color:#fde047;';
-              subTextHTML = `<span class="font-mono" style="font-size:10px; color:rgba(250,204,21,0.9);">${hrs}${t.hoursSuffix}</span>`;
-            } else {
-              cellStyle = 'border:1.5px solid #fde047; background:#fefce8; color:#78350f; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
-              subTextHTML = `<span class="font-mono" style="font-size:10px; color:#d97706;">${hrs}${t.hoursSuffix}</span>`;
-            }
-          } else if (entry.type === 'red') {
-            if (isDark) {
-              cellStyle = 'border:1.5px solid rgba(239,68,68,0.8); background:rgba(127,29,29,0.25); color:#f87171;';
-              subTextHTML = '';
-            } else {
-              cellStyle = 'border:1.5px solid #fca5a5; background:#fef2f2; color:#b91c1c; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
-              subTextHTML = '';
-            }
-          } else if (entry.type === 'custom') {
-            if (isDark) {
-              cellStyle = 'border:1.5px solid #3b82f6; background:rgba(30,58,138,0.3); color:#60a5fa;';
-              subTextHTML = `<span class="font-mono" style="font-size:10px; color:#60a5fa;">${hrs}${t.hoursSuffix}</span>`;
-            } else {
-              cellStyle = 'border:1.5px solid #60a5fa; background:#eff6ff; color:#1d4ed8; box-shadow:0 1px 3px rgba(0,0,0,0.05);';
-              subTextHTML = `<span class="font-mono" style="font-size:10px; color:#2563eb;">${hrs}${t.hoursSuffix}</span>`;
-            }
-          }
-        } else {
-          cellStyle = isDark 
-            ? 'border:1px solid var(--border); background:rgba(31,31,35,0.4); color:#d4d4d8;' 
-            : 'border:1px solid var(--border); background:var(--card-subtle); color:#475569;';
-        }
-
-        cell.className = 'day-cell squircle active-scale';
+        cell.className = 'day-cell squircle';
         cell.dataset.day = day;
-        cell.style.cssText = cellStyle;
-        cell.innerHTML = `
-          <span style="font-size:12px; font-weight:600; line-height:1; pointer-events:none;">${day}</span>
-          ${subTextHTML ? `<span style="line-height:1; margin-top:3px; pointer-events:none;">${subTextHTML}</span>` : ''}
-        `;
+        updateCellVisual(cell, day);
 
-        // Klik Mouse Biasa
         cell.addEventListener('mousedown', (e) => {
           if (e.button === 0) {
             isDragging = true;
             dragHasChanged = false;
-            paintDayWithoutRender(day);
+            applyPaintToDay(day, cell);
           }
         });
 
         cell.addEventListener('mouseenter', () => {
           if (isDragging) {
-            paintDayWithoutRender(day);
+            applyPaintToDay(day, cell);
           }
         });
 
@@ -1188,43 +1138,32 @@
       recalculateTotals();
     }
 
-    // Fungsi Mewarnai Tanggal yang Efisien Saat Diseret
-    function paintDayWithoutRender(day) {
+    function applyPaintToDay(day, cell) {
+      if (lastPaintedDay === day) return;
+      lastPaintedDay = day;
+
       const monthKey = getMonthKey(currentYear, currentMonth);
       if (!calendarStore[monthKey]) calendarStore[monthKey] = {};
 
-      const current = calendarStore[monthKey][day];
-      let isDifferent = false;
-
       if (activeBrush === 'clear') {
-        if (current) {
-          delete calendarStore[monthKey][day];
-          isDifferent = true;
-        }
+        delete calendarStore[monthKey][day];
       } else if (activeBrush === 'custom') {
-        if (!current || current.type !== 'custom' || current.customHours !== presetConfigs.custom) {
-          calendarStore[monthKey][day] = { type: 'custom', customHours: presetConfigs.custom };
-          isDifferent = true;
-        }
+        calendarStore[monthKey][day] = { type: 'custom', customHours: presetConfigs.custom };
       } else {
-        if (!current || current.type !== activeBrush) {
-          calendarStore[monthKey][day] = { type: activeBrush };
-          isDifferent = true;
-        }
+        calendarStore[monthKey][day] = { type: activeBrush };
       }
 
-      if (isDifferent) {
-        dragHasChanged = true;
-        renderCalendar(); // Perbarui tampilan kotak langsung saat jari melewatinya
-      }
+      dragHasChanged = true;
+      if (cell) updateCellVisual(cell, day);
+      recalculateTotals();
     }
 
     // ==========================================
-    // SISTEM SENTUH GESER (TOUCH DRAG & SWIPE) HP
+    // SISTEM TOUCH DRAG NATIVE IOS / ANDROID
     // ==========================================
-    const cardArea = document.getElementById('calendarCardArea');
+    const calendarGridEl = document.getElementById('calendarGrid');
 
-    cardArea.addEventListener('touchstart', (e) => {
+    calendarGridEl.addEventListener('touchstart', (e) => {
       const touch = e.touches[0];
       const target = document.elementFromPoint(touch.clientX, touch.clientY);
       const cell = target ? target.closest('.day-cell[data-day]') : null;
@@ -1232,14 +1171,15 @@
       if (cell) {
         isDragging = true;
         dragHasChanged = false;
+        lastPaintedDay = null;
         const day = parseInt(cell.dataset.day, 10);
-        paintDayWithoutRender(day);
+        applyPaintToDay(day, cell);
       }
-    }, { passive: false });
+    }, { passive: true });
 
-    cardArea.addEventListener('touchmove', (e) => {
+    calendarGridEl.addEventListener('touchmove', (e) => {
       if (!isDragging) return;
-      e.preventDefault(); // Menghentikan layar dari bergulir saat jari sedang mewarnai
+      e.preventDefault();
 
       const touch = e.touches[0];
       const target = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -1247,23 +1187,23 @@
 
       if (cell) {
         const day = parseInt(cell.dataset.day, 10);
-        paintDayWithoutRender(day);
+        applyPaintToDay(day, cell);
       }
     }, { passive: false });
 
-    function finishDragging() {
+    function handleDragEnd() {
       if (isDragging) {
         isDragging = false;
+        lastPaintedDay = null;
         if (dragHasChanged) {
           saveData();
-          recalculateTotals();
         }
       }
     }
 
-    window.addEventListener('touchend', finishDragging);
-    window.addEventListener('touchcancel', finishDragging);
-    window.addEventListener('mouseup', finishDragging);
+    window.addEventListener('touchend', handleDragEnd);
+    window.addEventListener('touchcancel', handleDragEnd);
+    window.addEventListener('mouseup', handleDragEnd);
 
     function recalculateTotals() {
       const t = getT();
@@ -1312,7 +1252,6 @@
       document.getElementById('grandTotalWage').textContent = totalWage.toLocaleString('id-ID');
       document.getElementById('rateSummaryNote').textContent = `@ ${presetConfigs.hourlyRate} TL/${t.hoursSuffix.toUpperCase()}`;
 
-      // Elemen PDF
       document.getElementById('printTotalHours').textContent = `${totalHours} ${t.totalHoursUnit}`;
       document.getElementById('printTotalWage').textContent = `${totalWage.toLocaleString('id-ID')} TL`;
       document.getElementById('printRateNote').textContent = `Tarif: ${presetConfigs.hourlyRate} TL / ${t.totalHoursUnit}`;
@@ -1427,7 +1366,6 @@
       closeDaySheet();
     });
 
-    // Pengaturan
     document.getElementById('openConfigBtn').addEventListener('click', () => {
       showSheet('configSheetOverlay');
     });
@@ -1462,7 +1400,6 @@
       hideSheet('configSheetOverlay');
     });
 
-    // Navigasi Bulan
     document.getElementById('prevMonthBtn').addEventListener('click', () => {
       currentMonth--;
       if (currentMonth < 0) {
@@ -1494,7 +1431,6 @@
       if (e.target.id === 'configSheetOverlay') hideSheet('configSheetOverlay');
     });
 
-    // Cetak Dokumen PDF Rapi
     function exportToPDF() {
       const now = new Date();
       document.getElementById('printDocSub').textContent = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`;
@@ -1518,11 +1454,10 @@
       }, 100);
     }
 
-    // Service Worker Mandiri (100% Offline Support)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         const swScript = `
-          const CACHE_NAME = 'shift-app-offline-v7';
+          const CACHE_NAME = 'shift-app-offline-v8';
           self.addEventListener('install', e => self.skipWaiting());
           self.addEventListener('activate', e => e.waitUntil(clients.claim()));
           self.addEventListener('fetch', e => {
