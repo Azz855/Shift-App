@@ -1,0 +1,6 @@
+{
+  "appId": "com.azz.shiftapp",
+  "appName": "Shift Wage",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
