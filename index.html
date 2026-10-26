@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Shift & Gaji Kalender</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"SF Pro Text"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            // Apple Light Mode Palette
+            light: {
+              bg: '#f3f4f6',
+              card: '#ffffff',
+              cardSubtle: '#f9fafb',
+              border: '#e5e7eb',
+              textPrimary: '#111827',
+              textSecondary: '#6b7280',
+              textMuted: '#9ca3af',
+              accentYellow: '#eab308',
+              accentRed: '#ef4444',
+              accentBlue: '#2563eb',
+            },
+            // Apple Dark Mode Palette (Pure OLED Black)
+            dark: {
+              bg: '#000000',
+              card: '#161618',
+              cardSubtle: '#1f1f23',
+              border: '#2a2a2e',
+              textPrimary: '#ffffff',
+              textSecondary: '#9ca3af',
+              textMuted: '#52525b',
+              accentYellow: '#facc15',
+              accentRed: '#f87171',
+              accentBlue: '#3b82f6',
+            }
+          },
+          boxShadow: {
+            'ios-light': '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03)',
+            'ios-light-card': '0 4px 20px -2px rgba(0, 0, 0, 0.06)',
+            'ios-dark-card': '0 4px 20px -2px rgba(0, 0, 0, 0.5)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* iOS native touch feel */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, button {
+      user-select: auto;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+    .ios-blur {
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .sheet-transition {
+      transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.28s ease;
+    }
+    .active-scale:active {
+      transform: scale(0.95);
+      transition: transform 0.1s ease;
+    }
+    /* Squircle shape standard */
+    .squircle {
+      border-radius: 1.15rem;
+    }
+  </style>
+</head>
+<body class="bg-light-bg text-light-textPrimary dark:bg-dark-bg dark:text-dark-textPrimary min-h-screen flex flex-col justify-between antialiased">
+
+  <!-- Top Sticky Header Bar -->
+  <header class="sticky top-0 z-40 bg-light-bg/85 dark:bg-dark-bg/85 ios-blur border-b border-light-border dark:border-dark-border px-4 py-2.5">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      
+      <!-- Left: Back Button & Title -->
+      <div class="flex items-center gap-2">
+        <button id="prevMonthBtn" class="w-9 h-9 rounded-full bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border flex items-center justify-center text-light-textPrimary dark:text-dark-textPrimary shadow-sm active-scale">
+          <i class="fa-solid fa-chevron-left text-sm"></i>
+        </button>
+        <h1 id="monthYearDisplay" class="text-lg font-bold tracking-tight text-light-textPrimary dark:text-white">
+          Oktober 2026
+        </h1>
+      </div>
+
+      <!-- Right: Month Badge, Theme Toggle & Settings Icon -->
+      <div class="flex items-center gap-2">
+        <!-- Theme Toggle (Pagi / Malam) -->
+        <button id="themeToggleBtn" class="w-8 h-8 rounded-full bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border flex items-center justify-center text-amber-500 dark:text-yellow-400 active-scale" title="Ganti Mode Terang / Gelap">
+          <i id="themeIcon" class="fa-solid fa-moon text-xs"></i>
+        </button>
+
+        <!-- Shortcut Bulan Ini -->
+        <button id="todayBadgeBtn" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-light-card dark:bg-[#152538] text-light-textSecondary dark:text-[#388bfd] border border-light-border dark:border-[#1f3a5f] active-scale">
+          Okt '26
+        </button>
+
+        <!-- Tombol Konfigurasi Jam & Upah -->
+        <button id="openConfigBtn" class="w-8 h-8 rounded-full bg-light-card dark:bg-dark-card border border-light-border dark:border-dark-border flex items-center justify-center text-light-textSecondary dark:text-slate-300 hover:text-white active-scale" title="Atur Jam & Tarif Upah">
+          <i class="fa-solid fa-sliders text-xs"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="max-w-md w-full mx-auto px-3.5 pt-3 pb-28 flex-1 flex flex-col gap-3.5">
+    
+    <!-- Top Brush Selector (Segmented Pill Bar) -->
+    <section class="bg-light-card dark:bg-dark-card p-1 rounded-2xl flex items-center gap-1 border border-light-border dark:border-dark-border shadow-ios-light dark:shadow-none">
+      
+      <!-- Preset Putih -->
+      <button data-brush="white" class="brush-pill flex-1 py-1.5 px-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition active-scale text-light-textSecondary dark:text-slate-300 hover:text-light-textPrimary dark:hover:text-white">
+        <span class="w-2.5 h-2.5 rounded-full bg-slate-400 dark:bg-white border border-black/20"></span>
+        <span class="font-semibold">Putih</span>
+        <span class="text-[11px] font-mono opacity-80" id="pillWhiteHours">9j</span>
+      </button>
+
+      <!-- Preset Kuning -->
+      <button data-brush="yellow" class="brush-pill flex-1 py-1.5 px-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition active-scale text-light-textSecondary dark:text-slate-300 hover:text-light-textPrimary dark:hover:text-white">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-400 dark:bg-yellow-400"></span>
+        <span class="font-semibold">Kuning</span>
+        <span class="text-[11px] font-mono opacity-80" id="pillYellowHours">7j</span>
+      </button>
+
+      <!-- Preset Merah / Libur -->
+      <button data-brush="red" class="brush-pill flex-1 py-1.5 px-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition active-scale text-light-textSecondary dark:text-slate-300 hover:text-light-textPrimary dark:hover:text-white">
+        <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+        <span class="font-semibold">Libur</span>
+      </button>
+
+      <!-- Preset Khusus (Default Aktif) -->
+      <button data-brush="custom" class="brush-pill flex-1 py-1.5 px-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition active-scale bg-blue-500 text-white shadow-sm font-semibold">
+        <span class="w-2.5 h-2.5 rounded-full bg-white"></span>
+        <span class="font-semibold">Khusus</span>
+        <span class="text-[11px] font-mono opacity-90" id="pillCustomHours">3j</span>
+      </button>
+
+      <!-- Hapus Shift -->
+      <button data-brush="clear" class="brush-pill w-8 py-1.5 rounded-xl text-xs font-medium flex items-center justify-center transition active-scale text-light-textMuted dark:text-zinc-500 hover:text-red-500" title="Hapus Shift">
+        <i class="fa-solid fa-eraser text-[11px]"></i>
+      </button>
+    </section>
+
+    <!-- Sub-bar Helper Text -->
+    <div class="flex items-center justify-between px-1 text-[11px]">
+      <div class="text-light-textSecondary dark:text-dark-textSecondary">
+        Mode sentuh: <strong id="activeModeLabel" class="text-light-textPrimary dark:text-white font-semibold">Khusus (3 jam)</strong>
+      </div>
+      <div class="text-light-textMuted dark:text-zinc-500 text-[10px]">
+        Ketuk tanggal untuk ubah
+      </div>
+    </div>
+
+    <!-- Calendar Card Container -->
+    <div class="bg-light-card dark:bg-dark-card rounded-3xl p-3.5 border border-light-border dark:border-dark-border shadow-ios-light-card dark:shadow-ios-dark-card">
+      
+      <!-- Day Headers (SEN - MIN) -->
+      <div class="grid grid-cols-7 mb-2 text-center text-[10px] font-bold tracking-wider text-light-textMuted dark:text-zinc-400">
+        <div>SEN</div>
+        <div>SEL</div>
+        <div>RAB</div>
+        <div>KAM</div>
+        <div>JUM</div>
+        <div>SAB</div>
+        <div class="text-red-500">MIN</div>
+      </div>
+
+      <!-- Dates Grid -->
+      <div id="calendarGrid" class="grid grid-cols-7 gap-2">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+
+    <!-- 4-Column Stat Summary Cards (Exact Layout) -->
+    <div class="grid grid-cols-4 gap-2 text-center">
+      
+      <!-- Putih Card -->
+      <div class="bg-light-card dark:bg-dark-card rounded-2xl py-2.5 px-1 border border-light-border dark:border-dark-border shadow-sm flex flex-col items-center justify-center">
+        <span class="text-[11px] font-medium text-light-textSecondary dark:text-zinc-400">Putih</span>
+        <span class="text-sm font-bold text-light-textPrimary dark:text-white mt-0.5 tracking-tight" id="statWhiteCount">18 hr</span>
+        <span class="text-[10px] font-mono text-light-textMuted dark:text-zinc-500" id="statWhiteHours">162 jam</span>
+      </div>
+
+      <!-- Kuning Card -->
+      <div class="bg-light-card dark:bg-dark-card rounded-2xl py-2.5 px-1 border border-light-border dark:border-dark-border shadow-sm flex flex-col items-center justify-center">
+        <span class="text-[11px] font-medium text-amber-500 dark:text-yellow-400">Kuning</span>
+        <span class="text-sm font-bold text-light-textPrimary dark:text-white mt-0.5 tracking-tight" id="statYellowCount">7 hr</span>
+        <span class="text-[10px] font-mono text-light-textMuted dark:text-zinc-500" id="statYellowHours">49 jam</span>
+      </div>
+
+      <!-- Libur Card -->
+      <div class="bg-light-card dark:bg-dark-card rounded-2xl py-2.5 px-1 border border-light-border dark:border-dark-border shadow-sm flex flex-col items-center justify-center">
+        <span class="text-[11px] font-medium text-red-500">Libur</span>
+        <span class="text-sm font-bold text-light-textPrimary dark:text-white mt-0.5 tracking-tight" id="statRedCount">5 hr</span>
+        <span class="text-[10px] font-mono text-light-textMuted dark:text-zinc-500">0 jam</span>
+      </div>
+
+      <!-- Khusus Card -->
+      <div class="bg-light-card dark:bg-dark-card rounded-2xl py-2.5 px-1 border border-light-border dark:border-dark-border shadow-sm flex flex-col items-center justify-center">
+        <span class="text-[11px] font-medium text-blue-500 dark:text-blue-400">Khusus</span>
+        <span class="text-sm font-bold text-light-textPrimary dark:text-white mt-0.5 tracking-tight" id="statCustomCount">1 hr</span>
+        <span class="text-[10px] font-mono text-light-textMuted dark:text-zinc-500" id="statCustomHours">3 jam</span>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Sticky Bottom Calculation Bar (Exact Layout) -->
+  <footer class="fixed bottom-0 left-0 right-0 z-40 bg-light-bg/95 dark:bg-dark-bg/95 ios-blur border-t border-light-border dark:border-dark-border px-4 py-3 pb-6">
+    <div class="max-w-md mx-auto flex items-center justify-between">
+      
+      <!-- Total Jam Kerja -->
+      <div>
+        <div class="text-[10px] font-bold text-light-textSecondary dark:text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span>TOTAL JAM KERJA</span>
+          <span>•</span>
+          <span id="rateSummaryNote" class="text-light-textMuted dark:text-zinc-500">@ 130 TL/J</span>
+        </div>
+        <div class="flex items-baseline gap-1.5 mt-0.5">
+          <span id="grandTotalHours" class="text-2xl font-bold tracking-tight text-light-textPrimary dark:text-white font-mono">214</span>
+          <span class="text-xs font-semibold text-light-textSecondary dark:text-zinc-400">Jam</span>
+        </div>
+      </div>
+
+      <!-- Total Upah -->
+      <div class="text-right">
+        <div class="text-[10px] font-bold text-light-textSecondary dark:text-zinc-400 uppercase tracking-wider">
+          TOTAL UPAH
+        </div>
+        <div class="flex items-baseline justify-end gap-1 mt-0.5">
+          <span id="grandTotalWage" class="text-2xl font-extrabold tracking-tight text-amber-500 dark:text-yellow-400 font-mono">27.820</span>
+          <span class="text-xs font-bold text-amber-500 dark:text-yellow-400">TL</span>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- iOS Sheet: Edit Tanggal Khusus (Modal) -->
+  <div id="daySheetOverlay" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 transition-opacity duration-200">
+    <div id="daySheetContent" class="w-full max-w-sm bg-light-card dark:bg-dark-card border-t sm:border border-light-border dark:border-dark-border rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl translate-y-full sheet-transition">
+      <div class="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4 sm:hidden"></div>
+
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-base font-bold text-light-textPrimary dark:text-white tracking-tight" id="sheetDayTitle">Tanggal 23 Oktober</h3>
+          <p class="text-xs text-light-textSecondary dark:text-dark-textSecondary">Atur jam kerja khusus untuk hari ini</p>
+        </div>
+        <button id="closeDaySheetBtn" class="w-7 h-7 rounded-full bg-light-bg dark:bg-dark-cardSubtle flex items-center justify-center text-light-textSecondary dark:text-zinc-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 gap-2 mb-4">
+        <button type="button" data-type="white" class="day-option-btn w-full p-3 rounded-2xl bg-light-bg dark:bg-dark-cardSubtle border border-transparent active:border-slate-400 flex items-center justify-between text-left active-scale">
+          <div class="flex items-center gap-3">
+            <span class="w-4 h-4 rounded-full border-2 border-slate-400 dark:border-white"></span>
+            <span class="text-sm font-semibold text-light-textPrimary dark:text-white">Shift Putih</span>
+          </div>
+          <span class="text-xs font-mono text-light-textSecondary dark:text-zinc-400" id="sheetWhiteHoursHint">9 jam</span>
+        </button>
+
+        <button type="button" data-type="yellow" class="day-option-btn w-full p-3 rounded-2xl bg-light-bg dark:bg-dark-cardSubtle border border-transparent active:border-yellow-400 flex items-center justify-between text-left active-scale">
+          <div class="flex items-center gap-3">
+            <span class="w-4 h-4 rounded-full bg-amber-400 dark:bg-yellow-400"></span>
+            <span class="text-sm font-semibold text-light-textPrimary dark:text-white">Shift Kuning</span>
+          </div>
+          <span class="text-xs font-mono text-light-textSecondary dark:text-zinc-400" id="sheetYellowHoursHint">7 jam</span>
+        </button>
+
+        <button type="button" data-type="red" class="day-option-btn w-full p-3 rounded-2xl bg-light-bg dark:bg-dark-cardSubtle border border-transparent active:border-red-400 flex items-center justify-between text-left active-scale">
+          <div class="flex items-center gap-3">
+            <span class="w-4 h-4 rounded-full bg-red-500"></span>
+            <span class="text-sm font-semibold text-light-textPrimary dark:text-white">Libur</span>
+          </div>
+          <span class="text-xs font-mono text-light-textSecondary dark:text-zinc-400">0 jam</span>
+        </button>
+      </div>
+
+      <!-- Input Jam Khusus Untuk Hari Ini Saja -->
+      <div class="bg-light-bg dark:bg-dark-cardSubtle border border-light-border dark:border-dark-border rounded-2xl p-3 mb-4">
+        <div class="text-xs font-semibold text-light-textPrimary dark:text-zinc-200 mb-2 flex items-center justify-between">
+          <span>Jam Khusus Hari Ini:</span>
+          <span class="text-[11px] text-blue-500 font-mono">(misal 3 jam)</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <input type="number" id="specificDayHoursInput" min="0" max="24" step="0.5" placeholder="0" class="flex-1 bg-light-card dark:bg-black rounded-xl px-3 py-2 text-sm font-mono text-light-textPrimary dark:text-white text-center font-bold border border-light-border dark:border-dark-border focus:outline-none focus:ring-1 focus:ring-blue-500">
+          <button id="applySpecificHoursBtn" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-xl active-scale">
+            Terapkan
+          </button>
+        </div>
+      </div>
+
+      <button id="clearSpecificDayBtn" class="w-full py-2.5 text-xs font-semibold text-red-500 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 rounded-xl active-scale">
+        Hapus Penandaan Hari Ini
+      </button>
+    </div>
+  </div>
+
+  <!-- iOS Sheet: Pengaturan Durasi Default & Tarif Upah -->
+  <div id="configSheetOverlay" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 transition-opacity duration-200">
+    <div id="configSheetContent" class="w-full max-w-sm bg-light-card dark:bg-dark-card border-t sm:border border-light-border dark:border-dark-border rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl translate-y-full sheet-transition">
+      <div class="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full mx-auto mb-4 sm:hidden"></div>
+
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-base font-bold text-light-textPrimary dark:text-white tracking-tight">Atur Durasi Jam & Upah</h3>
+          <p class="text-xs text-light-textSecondary dark:text-dark-textSecondary">Ubah durasi jam default untuk tiap warna</p>
+        </div>
+        <button id="closeConfigSheetBtn" class="w-7 h-7 rounded-full bg-light-bg dark:bg-dark-cardSubtle flex items-center justify-center text-light-textSecondary dark:text-zinc-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 mb-5">
+        <!-- Upah Per Jam -->
+        <div class="flex items-center justify-between bg-light-bg dark:bg-dark-cardSubtle p-3 rounded-2xl border border-light-border dark:border-dark-border">
+          <span class="text-xs font-semibold text-light-textPrimary dark:text-white flex items-center gap-2">
+            <i class="fa-solid fa-coins text-amber-500"></i> Upah per Jam (TL)
+          </span>
+          <div class="flex items-center gap-1.5">
+            <input type="number" id="configRateInput" min="0" step="1" value="130" class="w-20 bg-light-card dark:bg-black text-right font-mono font-bold text-sm text-amber-500 dark:text-yellow-400 px-2.5 py-1 rounded-xl border border-light-border dark:border-dark-border focus:outline-none">
+            <span class="text-xs font-semibold text-light-textSecondary dark:text-zinc-400">TL</span>
+          </div>
+        </div>
+
+        <!-- Jam Preset Putih -->
+        <div class="flex items-center justify-between bg-light-bg dark:bg-dark-cardSubtle p-3 rounded-2xl border border-light-border dark:border-dark-border">
+          <span class="text-xs font-semibold text-light-textPrimary dark:text-white flex items-center gap-2">
+            <span class="w-3.5 h-3.5 rounded-full border border-slate-400 dark:border-white"></span> Jam Shift Putih
+          </span>
+          <div class="flex items-center gap-1.5">
+            <input type="number" id="configWhiteHours" min="0" max="24" step="0.5" value="9" class="w-16 bg-light-card dark:bg-black text-center font-mono font-bold text-sm text-light-textPrimary dark:text-white px-2 py-1 rounded-xl border border-light-border dark:border-dark-border focus:outline-none">
+            <span class="text-xs text-light-textSecondary dark:text-zinc-400">jam</span>
+          </div>
+        </div>
+
+        <!-- Jam Preset Kuning -->
+        <div class="flex items-center justify-between bg-light-bg dark:bg-dark-cardSubtle p-3 rounded-2xl border border-light-border dark:border-dark-border">
+          <span class="text-xs font-semibold text-light-textPrimary dark:text-white flex items-center gap-2">
+            <span class="w-3.5 h-3.5 rounded-full bg-amber-400 dark:bg-yellow-400"></span> Jam Shift Kuning
+          </span>
+          <div class="flex items-center gap-1.5">
+            <input type="number" id="configYellowHours" min="0" max="24" step="0.5" value="7" class="w-16 bg-light-card dark:bg-black text-center font-mono font-bold text-sm text-amber-500 dark:text-yellow-400 px-2 py-1 rounded-xl border border-light-border dark:border-dark-border focus:outline-none">
+            <span class="text-xs text-light-textSecondary dark:text-zinc-400">jam</span>
+          </div>
+        </div>
+
+        <!-- Jam Preset Khusus -->
+        <div class="flex items-center justify-between bg-light-bg dark:bg-dark-cardSubtle p-3 rounded-2xl border border-light-border dark:border-dark-border">
+          <span class="text-xs font-semibold text-light-textPrimary dark:text-white flex items-center gap-2">
+            <span class="w-3.5 h-3.5 rounded-full bg-blue-500"></span> Jam Shift Khusus
+          </span>
+          <div class="flex items-center gap-1.5">
+            <input type="number" id="configCustomHours" min="0" max="24" step="0.5" value="3" class="w-16 bg-light-card dark:bg-black text-center font-mono font-bold text-sm text-blue-500 dark:text-blue-400 px-2 py-1 rounded-xl border border-light-border dark:border-dark-border focus:outline-none">
+            <span class="text-xs text-light-textSecondary dark:text-zinc-400">jam</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="resetDefaultsBtn" class="flex-1 py-2.5 rounded-2xl bg-light-bg dark:bg-dark-cardSubtle text-xs font-semibold text-light-textSecondary dark:text-zinc-400 hover:text-white active-scale">
+          Default Awal
+        </button>
+        <button id="saveConfigBtn" class="flex-1 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white active-scale">
+          Simpan & Terapkan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State Aplikasi
+    const monthNames = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+
+    let currentYear = 2026;
+    let currentMonth = 9; // 9 = Oktober
+    let activeBrush = 'custom'; // Mode awal sesuai desain gambar (Khusus 3j aktif)
+
+    // Preset Durasi Jam Default
+    let presetConfigs = {
+      white: 9,
+      yellow: 7,
+      red: 0,
+      custom: 3,
+      hourlyRate: 130
+    };
+
+    let selectedDateForSheet = null;
+    let calendarStore = {};
+
+    // Data Awal Oktober 2026 Sesuai Gambar UI/UX
+    const initialOctober2026 = {
+      1: { type: 'white' },
+      2: { type: 'yellow' },
+      3: { type: 'yellow' },
+      4: { type: 'yellow' },
+      5: { type: 'red' },
+      6: { type: 'yellow' },
+      7: { type: 'yellow' },
+      8: { type: 'yellow' },
+      9: { type: 'white' },
+      10: { type: 'white' },
+      11: { type: 'white' },
+      12: { type: 'red' },
+      13: { type: 'white' },
+      14: { type: 'white' },
+      15: { type: 'white' },
+      16: { type: 'white' },
+      17: { type: 'white' },
+      18: { type: 'white' },
+      19: { type: 'red' },
+      20: { type: 'white' },
+      21: { type: 'white' },
+      22: { type: 'white' },
+      23: { type: 'custom', customHours: 3 }, // Khusus 3 jam (kotak biru)
+      24: { type: 'red' },
+      25: { type: 'yellow' },
+      26: { type: 'red' },
+      27: { type: 'white' },
+      28: { type: 'white' },
+      29: { type: 'white' },
+      30: { type: 'white' },
+      31: { type: 'white' }
+      // Catatan: tanggal 1 Nov di samping tgl 31 tidak dihitung
+    };
+
+    function getMonthKey(y, m) {
+      return `${y}-${String(m + 1).padStart(2, '0')}`;
+    }
+
+    function getHoursForEntry(entry) {
+      if (!entry) return 0;
+      if (entry.customHours !== undefined && entry.customHours !== null) {
+        return parseFloat(entry.customHours) || 0;
+      }
+      if (entry.type === 'white') return presetConfigs.white;
+      if (entry.type === 'yellow') return presetConfigs.yellow;
+      if (entry.type === 'custom') return presetConfigs.custom;
+      return 0; // red (libur)
+    }
+
+    // Toggle Light / Dark Mode
+    function initTheme() {
+      const savedTheme = localStorage.getItem('appleShift_theme') || 'dark';
+      applyTheme(savedTheme);
+
+      document.getElementById('themeToggleBtn').addEventListener('click', () => {
+        const isDark = document.documentElement.classList.contains('dark');
+        const nextTheme = isDark ? 'light' : 'dark';
+        applyTheme(nextTheme);
+        localStorage.setItem('appleShift_theme', nextTheme);
+        renderCalendar(); // Re-render untuk memperbarui gaya border dan tone
+      });
+    }
+
+    function applyTheme(theme) {
+      const themeIcon = document.getElementById('themeIcon');
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        themeIcon.className = 'fa-solid fa-sun text-xs text-yellow-400';
+      } else {
+        document.documentElement.classList.remove('dark');
+        themeIcon.className = 'fa-solid fa-moon text-xs text-slate-700';
+      }
+    }
+
+    // Load & Save Data
+    function loadSavedData() {
+      try {
+        const savedConfigs = localStorage.getItem('appleShift_configs');
+        if (savedConfigs) {
+          presetConfigs = { ...presetConfigs, ...JSON.parse(savedConfigs) };
+        }
+
+        const savedStore = localStorage.getItem('appleShift_store');
+        if (savedStore) {
+          calendarStore = JSON.parse(savedStore);
+        }
+
+        const octKey = getMonthKey(2026, 9);
+        if (!calendarStore[octKey]) {
+          calendarStore[octKey] = JSON.parse(JSON.stringify(initialOctober2026));
+          saveData();
+        }
+      } catch (e) {
+        console.error("Storage error:", e);
+      }
+      updateUIConfigValues();
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem('appleShift_configs', JSON.stringify(presetConfigs));
+        localStorage.setItem('appleShift_store', JSON.stringify(calendarStore));
+      } catch (e) {
+        console.error("Gagal simpan:", e);
+      }
+    }
+
+    function updateUIConfigValues() {
+      document.getElementById('pillWhiteHours').textContent = `${presetConfigs.white}j`;
+      document.getElementById('pillYellowHours').textContent = `${presetConfigs.yellow}j`;
+      document.getElementById('pillCustomHours').textContent = `${presetConfigs.custom}j`;
+
+      document.getElementById('configWhiteHours').value = presetConfigs.white;
+      document.getElementById('configYellowHours').value = presetConfigs.yellow;
+      document.getElementById('configCustomHours').value = presetConfigs.custom;
+      document.getElementById('configRateInput').value = presetConfigs.hourlyRate;
+
+      document.getElementById('sheetWhiteHoursHint').textContent = `${presetConfigs.white} jam`;
+      document.getElementById('sheetYellowHoursHint').textContent = `${presetConfigs.yellow} jam`;
+
+      document.getElementById('rateSummaryNote').textContent = `@ ${presetConfigs.hourlyRate} TL/J`;
+      updateModeLabel();
+    }
+
+    function updateModeLabel() {
+      const labelMap = {
+        white: `Putih (${presetConfigs.white} jam)`,
+        yellow: `Kuning (${presetConfigs.yellow} jam)`,
+        red: 'Libur (0 jam)',
+        custom: `Khusus (${presetConfigs.custom} jam)`,
+        clear: 'Hapus Shift'
+      };
+      document.getElementById('activeModeLabel').textContent = labelMap[activeBrush];
+    }
+
+    // Render Kalender Sesuai Desain Light & Dark Mode
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      document.getElementById('monthYearDisplay').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+      const monthKey = getMonthKey(currentYear, currentMonth);
+      const monthData = calendarStore[monthKey] || {};
+
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const startCol = (firstDay + 6) % 7; // Senin = 0, Minggu = 6
+      const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const prevMonthDays = new Date(currentYear, currentMonth, 0).getDate();
+
+      const isDark = document.documentElement.classList.contains('dark');
+
+      // Sel redup bulan sebelumnya
+      for (let i = startCol - 1; i >= 0; i--) {
+        const cell = document.createElement('div');
+        cell.className = 'aspect-square flex items-center justify-center opacity-30 pointer-events-none';
+        cell.innerHTML = `<span class="text-xs font-mono text-zinc-400 dark:text-zinc-600">${prevMonthDays - i}</span>`;
+        grid.appendChild(cell);
+      }
+
+      // Sel hari bulan aktif
+      for (let day = 1; day <= totalDays; day++) {
+        const entry = monthData[day];
+        const cell = document.createElement('div');
+
+        // Style squircle rounded sesuai gambar di kedua tema
+        let boxStyle = '';
+        let subTextHTML = '';
+
+        if (entry) {
+          const hrs = getHoursForEntry(entry);
+
+          if (entry.type === 'white') {
+            // Putih Style
+            if (isDark) {
+              boxStyle = 'border-[1.5px] border-zinc-400 bg-zinc-900/60 text-white';
+              subTextHTML = `<span class="text-[10px] font-mono text-zinc-400">${hrs}j</span>`;
+            } else {
+              boxStyle = 'border-[1.5px] border-slate-300 bg-white text-slate-800 shadow-sm';
+              subTextHTML = `<span class="text-[10px] font-mono text-slate-400">${hrs}j</span>`;
+            }
+          } else if (entry.type === 'yellow') {
+            // Kuning Style
+            if (isDark) {
+              boxStyle = 'border-[1.5px] border-yellow-500/80 bg-yellow-950/20 text-yellow-300';
+              subTextHTML = `<span class="text-[10px] font-mono text-yellow-400/90">${hrs}j</span>`;
+            } else {
+              boxStyle = 'border-[1.5px] border-amber-300 bg-amber-50 text-amber-900 shadow-sm';
+              subTextHTML = `<span class="text-[10px] font-mono text-amber-600/80">${hrs}j</span>`;
+            }
+          } else if (entry.type === 'red') {
+            // Merah (Libur) Style
+            if (isDark) {
+              boxStyle = 'border-[1.5px] border-red-500/80 bg-red-950/25 text-red-400';
+              subTextHTML = '';
+            } else {
+              boxStyle = 'border-[1.5px] border-red-300 bg-red-50 text-red-700 shadow-sm';
+              subTextHTML = '';
+            }
+          } else if (entry.type === 'custom') {
+            // Khusus (Blue) Style
+            if (isDark) {
+              boxStyle = 'border-[1.5px] border-blue-500 bg-blue-950/30 text-blue-400';
+              subTextHTML = `<span class="text-[10px] font-mono text-blue-400">${hrs}j</span>`;
+            } else {
+              boxStyle = 'border-[1.5px] border-blue-400 bg-blue-50 text-blue-700 shadow-sm';
+              subTextHTML = `<span class="text-[10px] font-mono text-blue-600">${hrs}j</span>`;
+            }
+          }
+        } else {
+          boxStyle = isDark 
+            ? 'border border-dark-border bg-dark-cardSubtle/40 text-zinc-300 hover:border-zinc-500' 
+            : 'border border-light-border bg-light-cardSubtle text-slate-600 hover:border-slate-400';
+        }
+
+        cell.className = `aspect-square squircle flex flex-col items-center justify-center cursor-pointer transition active-scale ${boxStyle}`;
+        cell.innerHTML = `
+          <span class="text-xs font-semibold leading-none">${day}</span>
+          ${subTextHTML ? `<span class="leading-none mt-1">${subTextHTML}</span>` : ''}
+        `;
+
+        // Klik sentuh: terapkan brush yang sedang aktif
+        cell.addEventListener('click', () => {
+          applyBrushToDay(day);
+        });
+
+        // Tahan / Klik Kanan: buka modal edit khusus
+        cell.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          openDaySheet(day);
+        });
+
+        grid.appendChild(cell);
+      }
+
+      // Sisa sel kosong berikutnya (misal tgl 1 Nov yang redup)
+      const totalCells = startCol + totalDays;
+      const remainingCols = (7 - (totalCells % 7)) % 7;
+      for (let nextDay = 1; nextDay <= remainingCols; nextDay++) {
+        const cell = document.createElement('div');
+        cell.className = 'aspect-square flex items-center justify-center opacity-30 pointer-events-none';
+        cell.innerHTML = `<span class="text-xs font-mono text-zinc-400 dark:text-zinc-600">${nextDay}</span>`;
+        grid.appendChild(cell);
+      }
+
+      recalculateTotals();
+    }
+
+    function applyBrushToDay(day) {
+      const monthKey = getMonthKey(currentYear, currentMonth);
+      if (!calendarStore[monthKey]) calendarStore[monthKey] = {};
+
+      if (activeBrush === 'clear') {
+        delete calendarStore[monthKey][day];
+      } else if (activeBrush === 'custom') {
+        calendarStore[monthKey][day] = {
+          type: 'custom',
+          customHours: presetConfigs.custom
+        };
+      } else {
+        calendarStore[monthKey][day] = {
+          type: activeBrush
+        };
+      }
+
+      saveData();
+      renderCalendar();
+    }
+
+    // Kalkulasi Rekap Total
+    function recalculateTotals() {
+      const monthKey = getMonthKey(currentYear, currentMonth);
+      const data = calendarStore[monthKey] || {};
+
+      let whiteCount = 0, whiteHours = 0;
+      let yellowCount = 0, yellowHours = 0;
+      let redCount = 0;
+      let customCount = 0, customHours = 0;
+
+      for (const day in data) {
+        const item = data[day];
+        const hrs = getHoursForEntry(item);
+
+        if (item.type === 'white') {
+          whiteCount++;
+          whiteHours += hrs;
+        } else if (item.type === 'yellow') {
+          yellowCount++;
+          yellowHours += hrs;
+        } else if (item.type === 'red') {
+          redCount++;
+        } else if (item.type === 'custom') {
+          customCount++;
+          customHours += hrs;
+        }
+      }
+
+      const totalHours = whiteHours + yellowHours + customHours;
+      const totalWage = totalHours * presetConfigs.hourlyRate;
+
+      // Update 4 Card Summary
+      document.getElementById('statWhiteCount').textContent = `${whiteCount} hr`;
+      document.getElementById('statWhiteHours').textContent = `${whiteHours} jam`;
+
+      document.getElementById('statYellowCount').textContent = `${yellowCount} hr`;
+      document.getElementById('statYellowHours').textContent = `${yellowHours} jam`;
+
+      document.getElementById('statRedCount').textContent = `${redCount} hr`;
+
+      document.getElementById('statCustomCount').textContent = `${customCount} hr`;
+      document.getElementById('statCustomHours').textContent = `${customHours} jam`;
+
+      // Update Sticky Bottom Bar
+      document.getElementById('grandTotalHours').textContent = totalHours.toLocaleString('id-ID');
+      document.getElementById('grandTotalWage').textContent = totalWage.toLocaleString('id-ID');
+      document.getElementById('rateSummaryNote').textContent = `@ ${presetConfigs.hourlyRate} TL/J`;
+    }
+
+    // Modal Sheet Handlers
+    function showSheet(overlayId, contentId) {
+      const overlay = document.getElementById(overlayId);
+      const content = document.getElementById(contentId);
+      overlay.classList.remove('hidden');
+      setTimeout(() => {
+        overlay.classList.remove('opacity-0');
+        content.classList.remove('translate-y-full');
+      }, 10);
+    }
+
+    function hideSheet(overlayId, contentId) {
+      const overlay = document.getElementById(overlayId);
+      const content = document.getElementById(contentId);
+      overlay.classList.add('opacity-0');
+      content.classList.add('translate-y-full');
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+      }, 250);
+    }
+
+    // Sheet Edit Tanggal
+    function openDaySheet(day) {
+      selectedDateForSheet = day;
+      document.getElementById('sheetDayTitle').textContent = `Tanggal ${day} ${monthNames[currentMonth]}`;
+      
+      const monthKey = getMonthKey(currentYear, currentMonth);
+      const entry = calendarStore[monthKey]?.[day];
+      
+      const specificInput = document.getElementById('specificDayHoursInput');
+      if (entry && (entry.customHours !== undefined || entry.type === 'custom')) {
+        specificInput.value = entry.customHours || presetConfigs.custom;
+      } else {
+        specificInput.value = '';
+      }
+
+      showSheet('daySheetOverlay', 'daySheetContent');
+    }
+
+    function closeDaySheet() {
+      hideSheet('daySheetOverlay', 'daySheetContent');
+      selectedDateForSheet = null;
+    }
+
+    // Navigasi Brush Pill Selector
+    document.querySelectorAll('.brush-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const brush = btn.getAttribute('data-brush');
+        activeBrush = brush;
+
+        // Reset semua pill
+        document.querySelectorAll('.brush-pill').forEach(b => {
+          b.className = 'brush-pill flex-1 py-1.5 px-2 rounded-xl text-xs font-medium flex items-center justify-center gap-1.5 transition active-scale text-light-textSecondary dark:text-slate-300 hover:text-light-textPrimary dark:hover:text-white';
+        });
+
+        // Highlight pill yang aktif
+        if (brush === 'white') {
+          btn.className = 'brush-pill flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition active-scale bg-slate-900 text-white dark:bg-white dark:text-black shadow-sm';
+        } else if (brush === 'yellow') {
+          btn.className = 'brush-pill flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition active-scale bg-amber-400 text-slate-950 dark:bg-yellow-400 dark:text-black shadow-sm';
+        } else if (brush === 'red') {
+          btn.className = 'brush-pill flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition active-scale bg-red-500 text-white shadow-sm';
+        } else if (brush === 'custom') {
+          btn.className = 'brush-pill flex-1 py-1.5 px-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition active-scale bg-blue-600 text-white shadow-sm';
+        } else {
+          btn.className = 'brush-pill w-8 py-1.5 rounded-xl text-xs font-semibold flex items-center justify-center transition active-scale bg-red-100 dark:bg-zinc-800 text-red-500';
+        }
+
+        updateModeLabel();
+      });
+    });
+
+    // Pilihan di dalam sheet hari
+    document.querySelectorAll('.day-option-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!selectedDateForSheet) return;
+        const type = btn.getAttribute('data-type');
+        const monthKey = getMonthKey(currentYear, currentMonth);
+        if (!calendarStore[monthKey]) calendarStore[monthKey] = {};
+
+        calendarStore[monthKey][selectedDateForSheet] = { type };
+        saveData();
+        renderCalendar();
+        closeDaySheet();
+      });
+    });
+
+    document.getElementById('applySpecificHoursBtn').addEventListener('click', () => {
+      if (!selectedDateForSheet) return;
+      const hours = parseFloat(document.getElementById('specificDayHoursInput').value) || 0;
+      const monthKey = getMonthKey(currentYear, currentMonth);
+      if (!calendarStore[monthKey]) calendarStore[monthKey] = {};
+
+      calendarStore[monthKey][selectedDateForSheet] = {
+        type: 'custom',
+        customHours: hours
+      };
+      saveData();
+      renderCalendar();
+      closeDaySheet();
+    });
+
+    document.getElementById('clearSpecificDayBtn').addEventListener('click', () => {
+      if (!selectedDateForSheet) return;
+      const monthKey = getMonthKey(currentYear, currentMonth);
+      if (calendarStore[monthKey]) {
+        delete calendarStore[monthKey][selectedDateForSheet];
+      }
+      saveData();
+      renderCalendar();
+      closeDaySheet();
+    });
+
+    // Tombol Pengaturan Jam & Upah
+    document.getElementById('openConfigBtn').addEventListener('click', () => {
+      showSheet('configSheetOverlay', 'configSheetContent');
+    });
+
+    document.getElementById('closeConfigSheetBtn').addEventListener('click', () => {
+      hideSheet('configSheetOverlay', 'configSheetContent');
+    });
+
+    document.getElementById('closeDaySheetBtn').addEventListener('click', closeDaySheet);
+
+    document.getElementById('saveConfigBtn').addEventListener('click', () => {
+      presetConfigs.hourlyRate = parseFloat(document.getElementById('configRateInput').value) || 130;
+      presetConfigs.white = parseFloat(document.getElementById('configWhiteHours').value) || 9;
+      presetConfigs.yellow = parseFloat(document.getElementById('configYellowHours').value) || 7;
+      presetConfigs.custom = parseFloat(document.getElementById('configCustomHours').value) || 3;
+
+      saveData();
+      updateUIConfigValues();
+      renderCalendar();
+      hideSheet('configSheetOverlay', 'configSheetContent');
+    });
+
+    document.getElementById('resetDefaultsBtn').addEventListener('click', () => {
+      presetConfigs = {
+        white: 9,
+        yellow: 7,
+        red: 0,
+        custom: 3,
+        hourlyRate: 130
+      };
+      saveData();
+      updateUIConfigValues();
+      renderCalendar();
+      hideSheet('configSheetOverlay', 'configSheetContent');
+    });
+
+    // Navigasi Bulan
+    document.getElementById('prevMonthBtn').addEventListener('click', () => {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      renderCalendar();
+    });
+
+    document.getElementById('todayBadgeBtn').addEventListener('click', () => {
+      currentYear = 2026;
+      currentMonth = 9;
+      renderCalendar();
+    });
+
+    // Tutup Sheet Saat Klik Area Backdrop
+    document.getElementById('daySheetOverlay').addEventListener('click', (e) => {
+      if (e.target.id === 'daySheetOverlay') closeDaySheet();
+    });
+
+    document.getElementById('configSheetOverlay').addEventListener('click', (e) => {
+      if (e.target.id === 'configSheetOverlay') hideSheet('configSheetOverlay', 'configSheetContent');
+    });
+
+    // Inisialisasi awal saat halaman siap
+    window.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      loadSavedData();
+      renderCalendar();
+    });
+  </script>
+</body>
+</html>
